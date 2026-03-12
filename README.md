@@ -4,6 +4,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-Dashboard-black)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-Active%20Development-orange)
+![Helm](https://img.shields.io/badge/Helm-chart-blue)
 
 Cost Detective is a developer-friendly Kubernetes efficiency analysis dashboard.
 
