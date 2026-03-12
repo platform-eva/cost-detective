@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-api
+  namespace: {{ include "cd.namespace" . }}
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels: { app: cd-api }
+  template:
+    metadata:
+      labels: { app: cd-api }
+    spec:
+      serviceAccountName: cd-api
+      containers:
+        - name: api
+          image: {{ .Values.images.api }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NAMESPACE
+              value: {{ include "cd.namespace" . }}
+            - name: BURNER_DEPLOY
+              value: cd-burner
+            - name: LOADJOB_NAME
+              value: cd-loadgen
+          ports:
+            - containerPort: 8000

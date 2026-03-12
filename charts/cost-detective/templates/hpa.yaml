@@ -1,0 +1,46 @@
+# ------------------------------------------------------
+# HPA = Horizontal Pod Autoscaler für den burner
+# ------------------------------------------------------
+# Diese Datei sorgt dafür, dass Kubernetes automatisch
+# mehr burner-Pods startet, wenn die CPU-Last steigt.
+#
+# Einfach erklärt:
+# Wenn ein Arbeiter zu viel Arbeit hat,
+# holt Kubernetes automatisch Hilfe dazu.
+# ------------------------------------------------------
+
+{{- if .Values.burner.autoscaling.enabled }}
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+
+metadata:
+  name: cd-burner-hpa                  # Name des Autoscalers
+  namespace: {{ include "cd.namespace" . }}   # Namespace aus Helm Helper
+
+spec:
+  # Welches Deployment soll automatisch skaliert werden?
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cd-burner
+
+  # Nie weniger als diese Anzahl an Pods
+  minReplicas: {{ .Values.burner.autoscaling.minReplicas }}
+
+  # Nie mehr als diese Anzahl an Pods
+  maxReplicas: {{ .Values.burner.autoscaling.maxReplicas }}
+
+  # Welche Metrik wird beobachtet?
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+
+          # Wenn die durchschnittliche CPU-Auslastung über diesem Wert liegt,
+          # startet Kubernetes weitere Pods
+          averageUtilization: {{ .Values.burner.autoscaling.targetCPUUtilization }}
+
+{{- end }}

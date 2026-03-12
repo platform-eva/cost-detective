@@ -1,0 +1,53 @@
+# ------------------------------------------------------
+# Deployment für cd-burner
+# ------------------------------------------------------
+# Dieser Pod ist unser Trainings-Pod für Lasttests.
+# Er wird später vom HPA automatisch hoch- und runter skaliert.
+#
+# Einfach erklärt:
+# Das ist unser Arbeiter, der unter Last mehr Kollegen bekommen kann.
+# ------------------------------------------------------
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: cd-burner                                # Name des Deployments
+  namespace: {{ include "cd.namespace" . }}      # Namespace aus Helm Helper
+
+spec:
+  # Start-Anzahl der Pods
+  replicas: {{ .Values.burner.replicas }}
+
+  # Der Selector sagt Kubernetes:
+  # Dieses Deployment kümmert sich um Pods mit dem Label app=cd-burner
+  selector:
+    matchLabels:
+      app: cd-burner
+
+  template:
+    metadata:
+      labels:
+        app: cd-burner
+
+    spec:
+      containers:
+        - name: burner
+
+          # Aktuell nutzt burner dasselbe Image wie die API.
+          # Das ist okay, wenn der Burner im selben Container/Image steckt.
+          image: {{ .Values.images.api }}
+
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8000   # Port im Container
+
+          # Ressourcen für CPU und RAM kommen aus values.yaml
+          # Das ist wichtig für den HPA, weil der Autoscaler
+          # die CPU-Auslastung relativ zu den requests bewertet.
+          resources:
+{{ toYaml .Values.burner.resources | indent 12 }}
+
+          # Hinweis:
+          # burner läuft auf /work und erzeugt CPU-Last für Tests

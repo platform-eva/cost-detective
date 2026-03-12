@@ -1,0 +1,79 @@
+# ------------------------------------------------------
+# Images = welche Container-Images Kubernetes starten soll
+# ------------------------------------------------------
+# Einfach erklärt:
+# Hier steht, welche "Programm-Boxen" benutzt werden.
+# web = Frontend
+# api = Backend
+#
+# Wichtig:
+# Diese Namen kommen direkt aus deinem laufenden Cluster.
+# ------------------------------------------------------
+images:
+  web: cost-detective-web:0.1.0
+  api: cost-detective-api:0.1.0
+
+
+# ------------------------------------------------------
+# Burner = Trainings-Pod für CPU-Last
+# ------------------------------------------------------
+# Einfach erklärt:
+# Das ist unser Lastgenerator.
+# Mit ihm zeigen wir später, dass Kubernetes bei Last
+# automatisch mehr Pods starten kann.
+# ------------------------------------------------------
+burner:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 100m                # Mindest-CPU für saubere Planung und HPA
+      memory: 128Mi            # Mindest-RAM
+
+    limits:
+      cpu: 500m                # Maximal erlaubte CPU
+      memory: 256Mi            # Maximal erlaubter RAM
+
+  autoscaling:
+    enabled: true              # Autoscaling für burner aktiv
+    minReplicas: 1             # Nie weniger als 1 Pod
+    maxReplicas: 5             # Nie mehr als 5 Pods
+    targetCPUUtilization: 50   # Bei über 50 % CPU soll skaliert werden
+
+
+# ------------------------------------------------------
+# API = das Gehirn der Anwendung
+# ------------------------------------------------------
+# Einfach erklärt:
+# Die API verarbeitet Anfragen und liefert Daten.
+# ------------------------------------------------------
+api:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 50m                 # Wenig CPU im Leerlauf
+      memory: 128Mi            # RAM für FastAPI / Python
+
+    limits:
+      cpu: 300m                # Darf kurzzeitig mehr CPU nutzen
+      memory: 256Mi            # Schutz vor zu hohem Speicherverbrauch
+
+
+# ------------------------------------------------------
+# Web = das Frontend
+# ------------------------------------------------------
+# Einfach erklärt:
+# Das ist die Oberfläche, die der Nutzer sieht.
+# ------------------------------------------------------
+web:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 50m                 # Wenig CPU nötig
+      memory: 128Mi            # RAM für Next.js
+
+    limits:
+      cpu: 300m                # Darf kurzzeitig mehr CPU nutzen
+      memory: 256Mi            # Schutz vor Speicherproblemen

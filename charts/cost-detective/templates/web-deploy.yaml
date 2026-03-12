@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-web
+  namespace: {{ include "cd.namespace" . }}
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels: { app: cd-web }
+  template:
+    metadata:
+      labels: { app: cd-web }
+    spec:
+      containers:
+        - name: web
+          image: {{ .Values.images.web }}
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-lc"]
+          args:
+            - "export HOSTNAME=0.0.0.0 PORT=3000; node server.js"
+          env:
+            - name: API_BASE_URL
+              value: "http://cd-api:8000"
+          ports:
+            - containerPort: 3000
