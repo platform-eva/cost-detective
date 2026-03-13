@@ -22,6 +22,7 @@ The goal is to visualize Kubernetes workloads and highlight inefficiencies that 
 ## Dashboard Preview
 
 ![Cost Detective Dashboard](docs/screenshots/dashboard.png)
+![Cost Detective Dashboard](docs/screenshots/dashboard-2.png)
 
 Cost Detective provides a clean dashboard for analyzing Kubernetes environments and identifying inefficient workloads.
 
