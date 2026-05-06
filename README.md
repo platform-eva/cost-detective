@@ -10,7 +10,7 @@
 
 Cost Detective is a developer-friendly Kubernetes efficiency analysis dashboard.
 
-The project helps platform engineers understand:
+It helps platform engineers understand:
 
 - Kubernetes workload behavior  
 - autoscaling configuration  
@@ -31,31 +31,6 @@ This project demonstrates real-world DevOps practices:
 - PostgreSQL persistence (historical analysis)  
 - CI pipeline using GitHub Actions  
 - Automated Docker image build & publish (GHCR)  
-
----
-
-## Dashboard Preview
-
-![Cost Detective Dashboard](docs/screenshots/dashboard.png)
-![Cost Detective Dashboard](docs/screenshots/dashboard-2.png)
-
-Cost Detective provides a clean dashboard for analyzing Kubernetes environments and identifying inefficient workloads.
-
-The current dashboard visualizes:
-
-- cluster health  
-- running workloads  
-- CPU usage trends  
-- Horizontal Pod Autoscaler configuration  
-- resource efficiency  
-- estimated infrastructure cost  
-
-⚠️ **Note**
-
-This repository currently contains a **demo environment**.  
-Some panels use example data to illustrate analysis concepts.
-
-Future versions will integrate live Kubernetes metrics.
 
 ---
 
