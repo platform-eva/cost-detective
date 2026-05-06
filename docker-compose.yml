@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  api:
+    build: ./apps/api
+    container_name: cd-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATA_MODE=mock
+      - NAMESPACE=cost-detective
+      - DATABASE_URL=postgresql://costdetective:costdetective@db:5432/costdetective
+    depends_on:
+      - db
+
+  web:
+    build: ./dashboard
+    container_name: cd-web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  db:
+    image: postgres:15
+    container_name: cd-db
+    environment:
+      - POSTGRES_DB=costdetective
+      - POSTGRES_USER=costdetective
+      - POSTGRES_PASSWORD=costdetective
+    ports:
+      - "5432:5432"
+    volumes:
+      - cd-db-data:/var/lib/postgresql/data
+
+volumes:
+  cd-db-data:
