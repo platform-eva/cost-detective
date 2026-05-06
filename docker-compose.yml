@@ -13,6 +13,8 @@ services:
       - DATABASE_URL=postgresql://costdetective:costdetective@db:5432/costdetective
     depends_on:
       - db
+    security_opt:
+      - no-new-privileges:true
 
   web:
     build: ./dashboard
@@ -21,6 +23,8 @@ services:
       - "3000:3000"
     depends_on:
       - api
+    security_opt:
+      - no-new-privileges:true
 
   db:
     image: postgres:15
