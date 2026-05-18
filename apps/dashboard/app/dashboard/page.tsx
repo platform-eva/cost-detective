@@ -9,11 +9,13 @@ import DeploymentsTable from "@/components/dashboard/DeploymentsTable";
 import HpaPanel from "@/components/dashboard/HpaPanel";
 import CostPanel from "@/components/dashboard/CostPanel";
 
-
 export const dynamic = "force-dynamic";
 
+const baseUrl =
+  process.env.NEXT_PUBLIC_API_URL || "http://api:8000";
+
 async function getSummary() {
-  const res = await fetch("http://localhost:3000/api/cluster/summary", {
+  const res = await fetch(`${baseUrl}/api/status`, {
     cache: "no-store",
   });
 
@@ -25,21 +27,13 @@ async function getSummary() {
 }
 
 async function getSnapshots() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://api:8000";
-
-  const res = await fetch(`${baseUrl}/api/snapshots`, {
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    return { snapshots: [] };
-  }
-
-  return res.json();
+  return {
+    snapshots: [],
+  };
 }
 
 async function getWorkloads() {
-  const res = await fetch("http://localhost:3000/api/cluster/workloads", {
+  const res = await fetch(`${baseUrl}/api/findings`, {
     cache: "no-store",
   });
 
@@ -49,21 +43,11 @@ async function getWorkloads() {
 
   return res.json();
 }
+
 async function getAlerts() {
-  const res = await fetch(
-    "http://localhost:3000/api/cluster/alerts-live",
-    {
-      cache: "no-store",
-    }
-  );
-
-  if (!res.ok) {
-    return {
-      alerts: [],
-    };
-  }
-
-  return res.json();
+  return {
+    alerts: [],
+  };
 }
 
 export default async function DashboardPage() {
@@ -106,8 +90,10 @@ export default async function DashboardPage() {
 
         <section className="mb-8">
           <ClusterHealth
-            status={summary.clusterHealth}
-            pods={summary.podsRunning}
+            status={summary.namespace || "unknown"}
+            pods={
+              summary.burnerDeployment?.readyReplicas || 0
+            }
           />
         </section>
 
@@ -116,23 +102,23 @@ export default async function DashboardPage() {
         </section>
 
         <section className="mb-8">
-          <CpuUsageChart data={data.cpuTrend} />
+          <CpuUsageChart data={[]} />
         </section>
 
         <section className="mb-8">
-          <ResourceWastePanel services={data.resourceWaste} />
+          <ResourceWastePanel services={[]} />
         </section>
 
         <section className="mb-8">
-          <ClusterEfficiencyScore workloads={data.inefficientWorkloads} />
+          <ClusterEfficiencyScore workloads={[]} />
         </section>
 
         <section className="mb-8">
-          <TopInefficientWorkloads workloads={data.inefficientWorkloads} />
+          <TopInefficientWorkloads workloads={[]} />
         </section>
 
         <section className="mb-8">
-          <OptimizationSuggestions workloads={data.inefficientWorkloads} />
+          <OptimizationSuggestions workloads={[]} />
         </section>
 
         <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
@@ -141,7 +127,9 @@ export default async function DashboardPage() {
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
               Database history
             </div>
-            <h2 className="mt-3 text-2xl font-bold">Analysis Snapshots</h2>
+            <h2 className="mt-3 text-2xl font-bold">
+              Analysis Snapshots
+            </h2>
             <p className="text-sm text-slate-400">
               Persisted analysis runs stored in PostgreSQL.
             </p>
@@ -154,10 +142,13 @@ export default async function DashboardPage() {
                 className="rounded-xl border border-slate-800 bg-slate-950 p-4"
               >
                 <div className="font-semibold">
-                  {new Date(s.created_at * 1000).toLocaleString()}
+                  {new Date(
+                    s.created_at * 1000
+                  ).toLocaleString()}
                 </div>
                 <div className="text-sm text-slate-400">
-                  Namespace: {s.namespace} · Findings: {s.finding_count}
+                  Namespace: {s.namespace} · Findings:{" "}
+                  {s.finding_count}
                 </div>
               </div>
             ))}
@@ -166,12 +157,17 @@ export default async function DashboardPage() {
 
         <section className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <DeploymentsTable deployments={data.deployments} />
+            <DeploymentsTable deployments={[]} />
           </div>
 
           <div className="space-y-6">
-            <HpaPanel hpa={data.hpa} />
-            <CostPanel cost={data.cost} />
+            <HpaPanel hpa={summary.hpa} />
+            <CostPanel cost={{
+    current: "0",
+    projected: "0",
+    savings: "0",
+  }}
+/>
           </div>
         </section>
       </div>
