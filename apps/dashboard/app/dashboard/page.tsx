@@ -19,8 +19,8 @@ async function getSummary() {
     cache: "no-store",
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to load summary data");
+   if (!res.ok) {
+    return {};
   }
 
   return res.json();
