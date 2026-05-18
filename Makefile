@@ -14,7 +14,7 @@ build-api:
 	docker build -t $(API_IMG) ./apps/api
 
 build-web:
-	docker build -t $(WEB_IMG) ./apps/web
+	docker build -t $(WEB_IMG) ./apps/dashboard
 
 import-images:
 	k3d image import -c $(CLUSTER) $(API_IMG) $(WEB_IMG)

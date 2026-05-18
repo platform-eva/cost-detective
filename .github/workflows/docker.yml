@@ -30,7 +30,7 @@ jobs:
         run: docker build -t ghcr.io/${{ github.repository }}/api:latest ./apps/api
 
       - name: Build Web Image
-        run: docker build -t ghcr.io/${{ github.repository }}/web:latest ./dashboard
+        run: docker build -t ghcr.io/${{ github.repository }}/web:latest ./apps/dashboard
 
       - name: Push API Image
         run: docker push ghcr.io/${{ github.repository }}/api:latest

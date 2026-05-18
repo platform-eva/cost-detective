@@ -25,3 +25,6 @@ def autoscaling() -> client.AutoscalingV22Api:
 
 def batch() -> client.BatchV1Api:
     return client.BatchV1Api()
+
+def custom_objects() -> client.CustomObjectsApi:
+    return client.CustomObjectsApi()

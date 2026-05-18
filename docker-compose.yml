@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api:
     build: ./apps/api
@@ -7,36 +5,41 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - PORT=8000
-      - DATA_MODE=mock
-      - NAMESPACE=cost-detective
-      - DATABASE_URL=postgresql://costdetective:costdetective@db:5432/costdetective
+      - DATABASE_URL=${DATABASE_URL}
+      - DATA_MODE=${DATA_MODE}
+      - NAMESPACE=${NAMESPACE}
     depends_on:
       - db
     security_opt:
       - no-new-privileges:true
 
   web:
-    build: ./dashboard
+    build: ./apps/dashboard
     container_name: cd-web
     ports:
       - "3000:3000"
+    environment:
+      - KUBECONFIG=/home/appuser/.kube/config
+      - NEXT_PUBLIC_API_URL=http://api:8000
+    volumes:
+      - ~/.kube/config-docker:/home/appuser/.kube/config:ro
+    extra_hosts:
+      - "localhost:host-gateway"
     depends_on:
       - api
     security_opt:
       - no-new-privileges:true
 
   db:
-    image: postgres:15
+    image: postgres:16
     container_name: cd-db
+    restart: always
     environment:
-      - POSTGRES_DB=costdetective
-      - POSTGRES_USER=costdetective
-      - POSTGRES_PASSWORD=costdetective
-    ports:
-      - "5432:5432"
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - cd-db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
 
 volumes:
-  cd-db-data:
+  db-data:
