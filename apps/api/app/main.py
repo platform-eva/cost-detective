@@ -166,7 +166,10 @@ def mock_status() -> Dict[str, Any]:
 
 @app.get("/health")
 def health() -> Dict[str, str]:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "training": "docker-compose-override"
+    }
 
 @app.get("/api/db/health")
 def db_health() -> Dict[str, Any]:

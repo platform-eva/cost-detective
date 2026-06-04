@@ -8,6 +8,9 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DATA_MODE=${DATA_MODE}
       - NAMESPACE=${NAMESPACE}
+      - PROMETHEUS_URL=${PROMETHEUS_URL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - db
     security_opt:
@@ -33,6 +36,7 @@ services:
       - ~/.kube/config-docker:/home/appuser/.kube/config:ro
     extra_hosts:
       - "localhost:host-gateway"
+      - "host.docker.internal:host-gateway"
     depends_on:
       - api
     security_opt:
