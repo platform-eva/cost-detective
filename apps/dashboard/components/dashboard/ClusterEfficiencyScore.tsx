@@ -1,260 +1,101 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
-
-type Workload = {
-  name: string;
-  efficiency?: number;
-};
-
 type Props = {
-  workloads?: Workload[];
+  summary?: {
+    podsRunning?: number;
+    cpuUsage?: number;
+    memoryUsageBytes?: number;
+    podRestarts?: number;
+  };
 };
 
-type LiveWeakestWorkload = {
-  name: string;
-  score: number;
-  reasons: string[];
-  cpuRequest: string;
-  actualUsage: string;
-};
+function getScore(summary?: Props["summary"]) {
+  let score = 100;
 
-type LiveEfficiencyResponse = {
-  success: boolean;
-  clusterScore?: number;
-  workloadCount?: number;
-  weakestWorkloads?: LiveWeakestWorkload[];
-  error?: string;
-};
+  if ((summary?.podsRunning ?? 0) === 0) score -= 35;
+  if ((summary?.podRestarts ?? 0) > 0) score -= 25;
+  if ((summary?.memoryUsageBytes ?? 0) > 2 * 1024 * 1024 * 1024) score -= 20;
+  if ((summary?.cpuUsage ?? 0) === 0) score -= 10;
 
-function getScoreColor(score: number) {
-  if (score >= 80) {
-    return "text-emerald-300";
-  }
-
-  if (score >= 60) {
-    return "text-amber-300";
-  }
-
-  return "text-rose-300";
+  return Math.max(score, 0);
 }
 
-function getProgressColor(score: number) {
-  if (score >= 80) {
-    return "bg-emerald-400";
-  }
-
-  if (score >= 60) {
-    return "bg-amber-400";
-  }
-
-  return "bg-rose-400";
+function getStatus(score: number) {
+  if (score >= 80) return "Healthy";
+  if (score >= 50) return "Warning";
+  return "Critical";
 }
 
-function getScoreLabel(score: number) {
-  if (score >= 80) {
-    return "Healthy efficiency";
-  }
-
-  if (score >= 60) {
-    return "Needs optimization";
-  }
-
-  return "Low efficiency";
-}
-
-function buildFallbackScore(workloads: Workload[]) {
-  if (!Array.isArray(workloads) || workloads.length === 0) {
-    return 0;
-  }
-
-  const validEfficiencies = workloads
-    .map((workload) =>
-      typeof workload.efficiency === "number" && !Number.isNaN(workload.efficiency)
-        ? workload.efficiency
-        : null
-    )
-    .filter((value): value is number => value !== null);
-
-  if (validEfficiencies.length === 0) {
-    return 0;
-  }
-
-  const total = validEfficiencies.reduce((sum, value) => sum + value, 0);
-  return Math.round(total / validEfficiencies.length);
-}
-
-function normalizeScore(value: number | null | undefined) {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return 0;
-  }
-
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-export default function ClusterEfficiencyScore({
-  workloads: fallbackWorkloads = [],
-}: Props) {
-  const [liveScore, setLiveScore] = useState<number | null>(null);
-  const [weakestWorkloads, setWeakestWorkloads] = useState<
-    LiveWeakestWorkload[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadEfficiencyScore() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/cluster/efficiency-live", {
-          cache: "no-store",
-        });
-
-        const data: LiveEfficiencyResponse = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || "Failed to load live efficiency score");
-        }
-
-        if (isMounted) {
-          setLiveScore(normalizeScore(data.clusterScore));
-          setWeakestWorkloads(data.weakestWorkloads ?? []);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err?.message ?? "Unknown error");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadEfficiencyScore();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const displayedScore = useMemo(() => {
-    if (liveScore !== null) {
-      return normalizeScore(liveScore);
-    }
-
-    return normalizeScore(buildFallbackScore(fallbackWorkloads));
-  }, [liveScore, fallbackWorkloads]);
-
-  const scoreLabel = getScoreLabel(displayedScore);
-  const scoreTextColor = getScoreColor(displayedScore);
-  const progressColor = getProgressColor(displayedScore);
+export default function ClusterEfficiencyScore({ summary }: Props) {
+  const score = getScore(summary);
+  const status = getStatus(score);
 
   return (
-    <section className="rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-900 to-slate-950 p-6 shadow-xl shadow-black/20">
+    <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
       <div className="mb-6">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300">
-          <span className="h-2 w-2 rounded-full bg-cyan-400" />
+        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
+          <span className="h-2 w-2 rounded-full bg-emerald-400" />
           Cluster efficiency
         </div>
 
-        <h2 className="text-2xl font-semibold text-white">
-          Cluster Efficiency Score
-        </h2>
-
+        <h2 className="mt-3 text-2xl font-bold">Cluster Efficiency Score</h2>
         <p className="mt-2 text-sm text-slate-400">
-          Live score based on deployment resource configuration and current CPU
-          usage
+          Bewertet den aktuellen Cluster-Zustand anhand von Prometheus-Metriken.
         </p>
-
-        {loading && (
-          <p className="mt-3 text-xs text-slate-500">
-            Loading live efficiency score...
-          </p>
-        )}
-
-        {error && (
-          <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            Live efficiency score could not be loaded. Showing fallback data.
-            Error: {error}
-          </div>
-        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-950/60 p-6 text-center">
-          <div className={`text-6xl font-bold ${scoreTextColor}`}>
-            {displayedScore}
-          </div>
-          <div className="mt-2 text-sm text-slate-400">out of 100</div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6 text-center">
+          <p className="text-6xl font-bold text-white">{score}</p>
+          <p className="mt-2 text-sm text-slate-400">out of 100</p>
 
-          <div className="mt-6 w-full">
-            <div className="h-3 overflow-hidden rounded-full bg-slate-800">
-              <div
-                className={`h-full rounded-full ${progressColor} transition-all duration-500`}
-                style={{ width: `${displayedScore}%` }}
-              />
-            </div>
+          <div className="mt-6 h-3 rounded-full bg-slate-800">
+            <div
+              className="h-3 rounded-full bg-cyan-400"
+              style={{ width: `${score}%` }}
+            />
           </div>
 
-          <div className={`mt-4 text-sm font-medium ${scoreTextColor}`}>
-            {scoreLabel}
-          </div>
+          <p className="mt-4 text-sm font-semibold text-cyan-300">{status}</p>
         </div>
 
-        <div className="rounded-3xl border border-slate-800 bg-slate-950/60 p-6">
-          <h3 className="text-lg font-semibold text-white">
-            Main efficiency findings
-          </h3>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+            <h3 className="mb-3 font-semibold text-white">Score Factors</h3>
 
-          <div className="mt-4 space-y-4">
-            {weakestWorkloads.length > 0 ? (
-              weakestWorkloads.map((workload) => (
-                <div
-                  key={workload.name}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="font-semibold text-white">{workload.name}</p>
-                      <p className="mt-1 text-sm text-slate-400">
-                        Score {workload.score} • Request {workload.cpuRequest} •
-                        Usage {workload.actualUsage}
-                      </p>
-                    </div>
+            <ul className="space-y-3 text-sm text-slate-300">
+              <li>
+                Running Pods:{" "}
+                <span className="font-semibold text-white">
+                  {summary?.podsRunning ?? 0}
+                </span>
+              </li>
+              <li>
+                CPU Usage:{" "}
+                <span className="font-semibold text-white">
+                  {summary?.cpuUsage ?? 0} cores
+                </span>
+              </li>
+              <li>
+                Memory Usage:{" "}
+                <span className="font-semibold text-white">
+                  {(((summary?.memoryUsageBytes ?? 0) / 1024 / 1024 / 1024).toFixed(2))} GB
+                </span>
+              </li>
+              <li>
+                Pod Restarts:{" "}
+                <span className="font-semibold text-white">
+                  {summary?.podRestarts ?? 0}
+                </span>
+              </li>
+            </ul>
+          </div>
 
-                    <span
-                      className={`w-fit rounded-full border px-3 py-1 text-xs font-medium ${
-                        workload.score >= 80
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                          : workload.score >= 60
-                          ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                          : "border-rose-500/20 bg-rose-500/10 text-rose-300"
-                      }`}
-                    >
-                      {workload.score}/100
-                    </span>
-                  </div>
-
-                  <ul className="mt-3 space-y-2 text-sm text-slate-300">
-                    {workload.reasons.map((reason) => (
-                      <li key={reason} className="flex items-start gap-2">
-                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-500" />
-                        <span>{reason}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm text-slate-500">
-                No live workload findings available.
-              </div>
-            )}
+          <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+            <h3 className="mb-3 font-semibold text-white">Interpretation</h3>
+            <p className="text-sm leading-6 text-slate-400">
+              Der Score übersetzt Monitoring-Daten in eine einfache Bewertung.
+              So wird sichtbar, ob aus Metriken konkrete technische Risiken
+              entstehen.
+            </p>
           </div>
         </div>
       </div>

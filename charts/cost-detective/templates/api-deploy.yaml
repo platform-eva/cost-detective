@@ -23,5 +23,7 @@ spec:
               value: cd-burner
             - name: LOADJOB_NAME
               value: cd-loadgen
+            - name: PROMETHEUS_URL
+              value: "http://kube-prometheus-stack-prometheus.monitoring:9090"
           ports:
             - containerPort: 8000

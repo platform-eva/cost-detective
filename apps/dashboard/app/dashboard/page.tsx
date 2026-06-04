@@ -8,14 +8,17 @@ import OptimizationSuggestions from "@/components/dashboard/OptimizationSuggesti
 import DeploymentsTable from "@/components/dashboard/DeploymentsTable";
 import HpaPanel from "@/components/dashboard/HpaPanel";
 import CostPanel from "@/components/dashboard/CostPanel";
+import MonitoringLearningPanel from "@/components/dashboard/MonitoringLearningPanel";
+import AlertingPreviewPanel from "@/components/dashboard/AlertingPreviewPanel";
+
 
 export const dynamic = "force-dynamic";
 
 const baseUrl =
-  process.env.NEXT_PUBLIC_API_URL || "http://api:8000";
+  process.env.NEXT_PUBLIC_API_URL || "http://cd-api:8000";
 
 async function getSummary() {
-  const res = await fetch(`${baseUrl}/api/status`, {
+  const res = await fetch(`${baseUrl}/api/prometheus/summary`, {
     cache: "no-store",
   });
 
@@ -100,25 +103,30 @@ export default async function DashboardPage() {
         <section className="mb-8">
           <SummaryCards summary={summary} />
         </section>
-
+        <section className="mb-8">
+          <MonitoringLearningPanel />
+        </section>
+        <section className="mb-8">
+          <AlertingPreviewPanel summary={summary} />
+        </section>
         <section className="mb-8">
           <CpuUsageChart data={[]} />
         </section>
 
         <section className="mb-8">
-          <ResourceWastePanel services={[]} />
+          <ResourceWastePanel services={data.findings ?? []} />        
         </section>
 
         <section className="mb-8">
-          <ClusterEfficiencyScore workloads={[]} />
+          <ClusterEfficiencyScore summary={summary} />
         </section>
 
         <section className="mb-8">
-          <TopInefficientWorkloads workloads={[]} />
+          <TopInefficientWorkloads workloads={data.findings ?? []} />
         </section>
 
         <section className="mb-8">
-          <OptimizationSuggestions workloads={[]} />
+          <OptimizationSuggestions summary={summary} />
         </section>
 
         <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
@@ -157,7 +165,7 @@ export default async function DashboardPage() {
 
         <section className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <DeploymentsTable deployments={[]} />
+            <DeploymentsTable deployments={data.findings ?? []} />
           </div>
 
           <div className="space-y-6">

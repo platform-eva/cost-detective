@@ -3,13 +3,25 @@ type Props = {
     nodes?: number;
     podsRunning?: number;
     cpuUsage?: number;
-    autoscaling?: string;
+    memoryUsageBytes?: number;
+    podRestarts?: number;
+    autoscalingActive?: boolean;
   };
 };
 
+function formatBytes(bytes?: number) {
+  if (!bytes || bytes <= 0) return "0 MB";
+
+  const gib = bytes / 1024 / 1024 / 1024;
+  if (gib >= 1) return `${gib.toFixed(2)} GB`;
+
+  const mib = bytes / 1024 / 1024;
+  return `${mib.toFixed(0)} MB`;
+}
+
 export default function SummaryCards({ summary }: Props) {
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
       <div className="rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-900 to-slate-950 p-6 shadow-xl shadow-black/20">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm font-medium text-slate-400">Nodes</p>
@@ -36,22 +48,41 @@ export default function SummaryCards({ summary }: Props) {
           <span className="h-3 w-3 rounded-full bg-amber-400" />
         </div>
         <p className="text-4xl font-bold text-white">
-          {summary.cpuUsage ?? 0}%
+          {summary.cpuUsage ?? 0}
         </p>
         <p className="mt-3 text-sm text-slate-500">
-          Estimated current usage
+          Current CPU usage in cores
         </p>
       </div>
 
       <div className="rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-900 to-slate-950 p-6 shadow-xl shadow-black/20">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm font-medium text-slate-400">Autoscaling</p>
+          <p className="text-sm font-medium text-slate-400">Memory Usage</p>
           <span className="h-3 w-3 rounded-full bg-violet-400" />
         </div>
         <p className="text-4xl font-bold text-white">
-          {summary.autoscaling ?? "Unknown"}
+          {formatBytes(summary.memoryUsageBytes)}
         </p>
-        <p className="mt-3 text-sm text-slate-500">HPA status</p>
+        <p className="mt-3 text-sm text-slate-500">
+          Current working set memory
+        </p>
+      </div>
+
+      <div className="rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-900 to-slate-950 p-6 shadow-xl shadow-black/20">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm font-medium text-slate-400">Pod Restarts</p>
+          <span
+            className={`h-3 w-3 rounded-full ${
+              (summary.podRestarts ?? 0) > 0 ? "bg-rose-400" : "bg-emerald-400"
+            }`}
+          />
+        </div>
+        <p className="text-4xl font-bold text-white">
+          {summary.podRestarts ?? 0}
+        </p>
+        <p className="mt-3 text-sm text-slate-500">
+          Container restarts observed
+        </p>
       </div>
     </div>
   );

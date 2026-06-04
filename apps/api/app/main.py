@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import os
 import time
+import json
+import urllib.parse
+import urllib.request
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
@@ -22,6 +25,10 @@ BURNER_DEPLOY = os.getenv("BURNER_DEPLOY", "cd-burner")
 LOADJOB_NAME = os.getenv("LOADJOB_NAME", "cd-loadgen")
 DATA_MODE = os.getenv("DATA_MODE", "kubernetes")
 DATABASE_URL = os.getenv("DATABASE_URL", "")
+PROMETHEUS_URL = os.getenv(
+    "PROMETHEUS_URL",
+    "http://kube-prometheus-stack-prometheus.monitoring:9090",
+)
 
 def db_engine():
     if not DATABASE_URL:
@@ -105,7 +112,23 @@ def mock_findings() -> Dict[str, Any]:
             },
         ],
     }
+def prometheus_query(query: str) -> float:
+    url = (
+        f"{PROMETHEUS_URL}/api/v1/query?"
+        + urllib.parse.urlencode({"query": query})
+    )
 
+    with urllib.request.urlopen(url, timeout=5) as response:
+        data = json.loads(response.read().decode("utf-8"))
+
+    if data.get("status") != "success":
+        return 0.0
+
+    result = data.get("data", {}).get("result", [])
+    if not result:
+        return 0.0
+
+    return float(result[0]["value"][1])
 
 def mock_status() -> Dict[str, Any]:
     return {
@@ -257,6 +280,27 @@ def status() -> Dict[str, Any]:
             "readyReplicas": dep.get("status", {}).get("ready_replicas", 0),
         },
         "hpa": hpa,
+    }
+
+@app.get("/api/prometheus/summary")
+def prometheus_summary() -> Dict[str, Any]:
+    return {
+        "namespace": NAMESPACE,
+        "timestamp": int(time.time()),
+        "prometheusUrl": PROMETHEUS_URL,
+        "nodes": prometheus_query("count(kube_node_info)"),
+        "runningPods": prometheus_query(
+            'count(kube_pod_status_phase{phase="Running"})'
+        ),
+        "cpuUsageCores": prometheus_query(
+            "sum(rate(container_cpu_usage_seconds_total[5m]))"
+        ),
+        "memoryUsageBytes": prometheus_query(
+            "sum(container_memory_working_set_bytes)"
+        ),
+        "podRestarts": prometheus_query(
+            "sum(kube_pod_container_status_restarts_total)"
+        ),
     }
 
 @app.post("/api/load/start")

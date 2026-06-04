@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cd-api
+  namespace: {{ include "cd.namespace" . }}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: api.cost-detective.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cd-api
+                port:
+                  number: 8000
+
