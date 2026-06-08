@@ -1,0 +1,47 @@
+name: Docker CI
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose environments
+        run: |
+          ENVIRONMENT=dev ./scripts/compose-branch.sh config --quiet
+          ENVIRONMENT=test ./scripts/compose-branch.sh config --quiet
+          ENVIRONMENT=prod ENV_FILE=config/.env.prod.example ./scripts/compose-branch.sh config --quiet
+
+      - name: Run tests in Docker
+        run: make test
+
+      - name: Show Docker logs after failure
+        if: failure()
+        run: ENVIRONMENT=test ./scripts/compose-branch.sh logs --no-color
+
+      - name: Clean up test environment
+        if: always()
+        run: ENVIRONMENT=test ./scripts/compose-branch.sh down --volumes --remove-orphans
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build production images
+        run: |
+          docker build -t cost-detective-api:ci ./apps/api
+          docker build -t cost-detective-web:ci ./apps/dashboard

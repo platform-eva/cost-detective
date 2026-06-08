@@ -3,6 +3,10 @@ services:
     environment:
       DATA_MODE: mock
 
+  web:
+    build:
+      target: builder
+
   db:
     restart: "no"
     volumes: !reset []

@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY alembic.ini .
 COPY migrations ./migrations
+COPY tests ./tests
 
 RUN chown -R appuser:appuser /app
 USER appuser

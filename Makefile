@@ -7,7 +7,7 @@ WEB_IMG = cost-detective-web:$(TAG)
 
 ENVIRONMENT ?= dev
 
-.PHONY: build-api build-web import-images deploy ns pf-api pf-web branch-up branch-down branch-ps branch-logs branch-config env-up env-down env-config db-migrate db-seed db-reset
+.PHONY: build-api build-web import-images deploy ns pf-api pf-web branch-up branch-down branch-ps branch-logs branch-config env-up env-down env-config db-migrate db-seed db-reset test-api test-web test
 
 branch-up:
 	./scripts/compose-branch.sh up --build -d
@@ -44,6 +44,16 @@ db-reset:
 	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh up -d db
 	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh run --rm --build api alembic upgrade head
 	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh run --rm api python -m app.seed
+
+test-api: ENVIRONMENT=test
+test-api: db-reset
+	ENVIRONMENT=test ./scripts/compose-branch.sh run --rm api python -m pytest -q
+
+test-web:
+	ENVIRONMENT=test ./scripts/compose-branch.sh run --rm --build --no-deps web npm run lint
+
+test: test-api test-web
+	ENVIRONMENT=test ./scripts/compose-branch.sh down --volumes
 
 ns:
 	kubectl create ns $(NS) || true
