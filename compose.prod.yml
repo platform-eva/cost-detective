@@ -1,0 +1,15 @@
+services:
+  api:
+    build: !reset null
+    image: ${API_IMAGE:?Set API_IMAGE for production}
+    restart: unless-stopped
+    environment:
+      DATA_MODE: kubernetes
+
+  web:
+    build: !reset null
+    image: ${WEB_IMAGE:?Set WEB_IMAGE for production}
+    restart: unless-stopped
+
+  db:
+    restart: unless-stopped

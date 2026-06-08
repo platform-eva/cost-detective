@@ -16,10 +16,6 @@ from sqlalchemy import create_engine, text
 
 app = FastAPI(title="Cost Detective API", version="0.1.0")
 
-@app.on_event("startup")
-def startup() -> None:
-    init_db()
-
 NAMESPACE = os.getenv("NAMESPACE", "cost-detective")
 BURNER_DEPLOY = os.getenv("BURNER_DEPLOY", "cd-burner")
 LOADJOB_NAME = os.getenv("LOADJOB_NAME", "cd-loadgen")
@@ -34,22 +30,6 @@ def db_engine():
     if not DATABASE_URL:
         return None
     return create_engine(DATABASE_URL)
-
-
-def init_db() -> None:
-    engine = db_engine()
-    if engine is None:
-        return
-
-    with engine.begin() as conn:
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS analysis_snapshots (
-                id SERIAL PRIMARY KEY,
-                namespace TEXT NOT NULL,
-                created_at INTEGER NOT NULL,
-                finding_count INTEGER NOT NULL
-            )
-        """))
 
 
 def save_snapshot(namespace: str, timestamp: int, finding_count: int) -> None:

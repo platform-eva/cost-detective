@@ -1,0 +1,15 @@
+services:
+  api:
+    environment:
+      PYTHONUNBUFFERED: "1"
+      DATA_MODE: mock
+    volumes:
+      - ./apps/api:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  web:
+    environment:
+      NODE_ENV: development
+      KUBECONFIG: /home/appuser/.kube/config
+    volumes:
+      - ~/.kube/config-docker:/home/appuser/.kube/config:ro

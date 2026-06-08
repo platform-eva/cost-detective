@@ -1,0 +1,10 @@
+services:
+  api:
+    environment:
+      DATA_MODE: mock
+
+  db:
+    restart: "no"
+    volumes: !reset []
+    tmpfs:
+      - /var/lib/postgresql/data

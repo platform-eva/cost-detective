@@ -5,7 +5,45 @@ TAG ?= 0.1.0
 API_IMG = cost-detective-api:$(TAG)
 WEB_IMG = cost-detective-web:$(TAG)
 
-.PHONY: build-api build-web import-images deploy ns pf-api pf-web
+ENVIRONMENT ?= dev
+
+.PHONY: build-api build-web import-images deploy ns pf-api pf-web branch-up branch-down branch-ps branch-logs branch-config env-up env-down env-config db-migrate db-seed db-reset
+
+branch-up:
+	./scripts/compose-branch.sh up --build -d
+
+branch-down:
+	./scripts/compose-branch.sh down
+
+branch-ps:
+	./scripts/compose-branch.sh ps
+
+branch-logs:
+	./scripts/compose-branch.sh logs -f
+
+branch-config:
+	./scripts/compose-branch.sh config
+
+env-up:
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh up --build -d
+
+env-down:
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh down
+
+env-config:
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh config
+
+db-migrate:
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh run --rm --build api alembic upgrade head
+
+db-seed:
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh run --rm --build api python -m app.seed
+
+db-reset:
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh down --volumes
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh up -d db
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh run --rm --build api alembic upgrade head
+	ENVIRONMENT=$(ENVIRONMENT) ./scripts/compose-branch.sh run --rm api python -m app.seed
 
 ns:
 	kubectl create ns $(NS) || true

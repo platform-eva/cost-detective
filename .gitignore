@@ -1,0 +1,11 @@
+.env
+config/.env.prod
+
+__pycache__/
+*.py[cod]
+
+node_modules/
+.next/
+
+.pytest_cache/
+coverage/
