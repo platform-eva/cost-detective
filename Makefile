@@ -7,7 +7,7 @@ WEB_IMG = cost-detective-web:$(TAG)
 
 ENVIRONMENT ?= dev
 
-.PHONY: build-api build-web import-images deploy ns pf-api pf-web branch-up branch-down branch-ps branch-logs branch-config env-up env-down env-config db-migrate db-seed db-reset test-api test-web test
+.PHONY: build-api build-web import-images deploy ns pf-api pf-web branch-up branch-down branch-ps branch-logs branch-config env-up env-down env-config db-migrate db-seed db-reset test-api test-web test image-tags
 
 branch-up:
 	./scripts/compose-branch.sh up --build -d
@@ -54,6 +54,9 @@ test-web:
 
 test: test-api test-web
 	ENVIRONMENT=test ./scripts/compose-branch.sh down --volumes
+
+image-tags:
+	./scripts/image-tags.sh
 
 ns:
 	kubectl create ns $(NS) || true
